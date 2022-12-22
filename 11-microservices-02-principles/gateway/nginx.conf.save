@@ -1,0 +1,143 @@
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log notice;
+pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    server {
+        listen *:8080;
+
+#POST /v1/register/
+# Анонимный доступ.
+# Запрос направляется в сервис security:3000 POST /v1/user
+
+        location /v1/register/ {
+
+               proxy_http_version 1.1;
+               proxy_method      POST;
+               client_max_body_size 4M;
+               proxy_pass http://security:3000/v1/user;
+        }
+
+#POST /v1/token
+# Анонимный доступ.
+# Запрос направляется в сервис security:3000 POST /v1/token
+
+        location /v1/token/ {
+               proxy_pass http://security:3000/v1/token;
+        }
+
+# GET /v1/user
+# Проверка токена. Токен ожидается в заголовке Authorization. Токен проверяется через вызов сервиса security:3000 GET /v1/token/validation/
+# Запрос направляется в сервис security:3000 GET /v1/user
+
+        location /v1/user/ {
+               proxy_http_version 1.1;
+               proxy_method      GET;
+               client_max_body_size 4M;
+               proxy_set_header Connection "";
+               proxy_set_header Host $host;
+               proxy_set_header X-Real-IP $remote_addr;
+               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+               proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+               proxy_set_header X-Frame-Options SAMEORIGIN;
+               proxy_set_header X-Request-Start $msec;
+               proxy_pass_header Set-Cookie;
+               proxy_buffers 512 32k;
+               proxy_buffer_size 32k;
+               proxy_read_timeout 600s;
+               proxy_cache off;
+               proxy_buffering on;
+               auth_request /_oauth2_token_introspection;
+               proxy_pass http://security:3000/v1/user/;
+        }
+
+
+# POST /v1/upload
+# Проверка токена. Токен ожидается в заголовке Authorization. Токен проверяется через вызов сервиса security:3000 GET /v1/token/validation/
+# Запрос направляется в сервис uploader:3000 POST /v1/upload
+
+        location /v1/upload/ {
+               proxy_http_version 1.1;
+               proxy_method      POST;
+               client_max_body_size 4M;
+               proxy_set_header Connection "";
+               proxy_set_header Host $host;
+               proxy_set_header X-Real-IP $remote_addr;
+               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+               proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+               proxy_set_header X-Frame-Options SAMEORIGIN;
+               proxy_set_header X-Request-Start $msec;
+               proxy_pass_header Set-Cookie;
+               proxy_buffers 512 32k;
+               proxy_buffer_size 32k;
+               proxy_read_timeout 600s;
+               proxy_cache off;
+               proxy_buffering on;
+               auth_request /_oauth2_token_introspection;
+               proxy_pass http://uploader:3000/v1/upload/;
+        }
+
+
+# GET /v1/user/{image}
+# Проверка токена. Токен ожидается в заголовке Authorization. Токен проверяется через вызов сервиса security:3000 GET /v1/token/validation/
+# Запрос направляется в сервис minio GET /images/{image}
+
+        location ~* ^/v1/user/(.+\.?:jpe?g|gif|ico|png|bmp)$ {
+               proxy_http_version 1.1;
+               proxy_method      GET;
+               client_max_body_size 4M;
+               proxy_set_header Connection "";
+               proxy_set_header Host $host;
+               proxy_set_header X-Real-IP $remote_addr;
+               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+               proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+               proxy_set_header X-Frame-Options SAMEORIGIN;
+               proxy_set_header X-Request-Start $msec;
+               proxy_pass_header Set-Cookie;
+               proxy_buffers 512 32k;
+               proxy_buffer_size 32k;
+               proxy_read_timeout 600s;
+               proxy_cache off;
+               proxy_buffering on;
+               auth_request /_oauth2_token_introspection;
+               proxy_pass http://minio/images/$1;
+        }
+
+        location = /_oauth2_token_introspection {
+                internal;
+                proxy_method      GET;
+                proxy_set_header  Authorization "bearer SecretForOAuthServer";
+                proxy_set_header  Content-Type "application/x-www-form-urlencoded";
+                proxy_set_body    "token=$http_apikey&token_hint=access_token";
+                proxy_pass        http://security:3000/v1/token/validation/;
+        }
+
+    }
+
+
+    include /etc/nginx/conf.d/*.conf;
+}
