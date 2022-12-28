@@ -212,19 +212,11 @@ You can view the list of minikube maintainers at: https://github.com/kubernetes/
 
 
 🌟  The 'dashboard' addon is enabled
-```
-
-
-```shell
    
 done`
 
 minikube addons enable dashboard
 
-
-Проверил
-dmitriy@pegasix:~$ kubectl port-forward service/hello-node --address 0.0.0.0 30809:8090
-Forwarding from 0.0.0.0:38090 -> 8090
 ```
 
 добавил автодополнение для minikube и kubectl:
@@ -243,14 +235,19 @@ dmitriy@dellix:~$ kubectl version --client
 WARNING: This version information is deprecated and will be replaced with the output from kubectl version --short.  Use --output=yaml|json to get the full version.
 Client Version: version.Info{Major:"1", Minor:"26", GitVersion:"v1.26.0", GitCommit:"b46a3f887ca979b1a5d14fd39cb1af43e7e5d12d", GitTreeState:"clean", BuildDate:"2022-12-08T19:58:30Z", GoVersion:"go1.19.4", Compiler:"gc", Platform:"linux/amd64"}
 Kustomize Version: v4.5.7
-
-kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl_complition
 ```
 
 Проверка работы приложения с удаленного компьютера не прошла, порт 8080 не появился на внешнем интерфейсе, доступном из локальной сети.
 EXTERNAL-IP всегда в состоянии pending
 
 ![img_3.png](img_3.png)
+
+port-forward тоже не сработал, после его запуска доступ к порту с удаленного компьютера не появился
+
+```shell
+dmitriy@pegasix:~$ kubectl port-forward service/hello-node --address 0.0.0.0 38080:8080
+Forwarding from 0.0.0.0:38080 -> 8080
+```
 
 Поэтому я добавил addon metallb,
 сконфигурировал его указав диапазон ip адресов внутренней из сети kvm:
@@ -269,6 +266,16 @@ dmitriy@pegasix:~$ minikube addons configure metallb
     ▪ Using image docker.io/metallb/controller:v0.9.6
 ✅  metallb was successfully configured  
 ```
+
+после этого у сервиса hello-node появился адрес EXTERNAL-IP=192.168.39.200:
+
+```shell
+dmitriy@dellix:~$ kubectget service
+NAME         TYPE           CLUSTER-IP       EXTERNAL-IP      PORT(S)          AGE
+hello-node   LoadBalancer   10.105.244.149   192.168.39.200   8080:32319/TCP   56m
+kubernetes   ClusterIP      10.96.0.1        <none>           443/TCP          83m
+```
+
 а также установил на хосте nginx и добавил в конфиг, на уровне с http секцию stream 
 
 ```shell
@@ -286,10 +293,8 @@ stream {
   }
 
 }
-
-Эти действия позволили осуществить проброс портов (приложения и управляющего) с внешнего адреса хостовой машины внутрь minikube:
-
 ```
+Эти действия позволили осуществить проброс портов (приложения и управляющего) с внешнего адреса хостовой машины внутрь minikube:
 
 
 ![img_2.png](img_2.png)
@@ -304,6 +309,10 @@ minikube start --vm-driver=docker --apiserver-ips=10.168.1.158
 ```shell
 ssh dmitriy@10.168.1.158 -L 38443:192.168.39.21:8443
 ```
+
+Попробовал запускать minikube c vm-driver равным docker и none.
+docker работал также, как kvm2, только адрес сервиса в сети 192.168.49.0/24, тоде потребовался nginx и metallb.
+none  - не cмог довавить addon ingress т.к. некоторые поды были в статусе pending. При этом, адрес сервисов в нем берется из локальной сети хоста, т.о. не требуется использовать nginx и metallb, но надо следить, чтобы порты сервисов minikube и хоста не совпадали.  
 
 ---
 
