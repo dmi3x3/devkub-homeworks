@@ -131,7 +131,7 @@ type: kubernetes.io/service-account-token
 EOF
 ```
 
-Посмотрим, токены в сервис аккаунте:
+Смотрю, токены в сервис аккаунте:
 
 ```shell
 dmitriy@dellix:~/netology/devkub-homeworks$ kubectl describe serviceaccounts devel-read 
@@ -152,14 +152,14 @@ dmitriy@dellix:~/netology/devkub-homeworks$ kubectl get secrets devel-read-token
 eyJhbGciOiJSUzI1NiIsImtpZCI6IlpnMEtDMG1sUXNfQWpDaTFWU0Z4V3p3OFZOVFBGTHFjU1Y5WWloZW82S28ifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRldmVsLXJlYWQtdG9rZW4iLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGV2ZWwtcmVhZCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjRlNjIxOTM5LTYwYzEtNDFiMy1iZGIxLTFiZjkwZGRjMmRkOSIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRldmVsLXJlYWQifQ.K8KUYdykaY9eNuxf2cOTXZv352kUwSOGCYwD7ZFoLNZHQFIWBVYw70sZssPE5VLSpqVYYI6KbwSEcT41QVXmVrpjhS4dpFsWCdSsHjq-UwXxzzMVvwspOeu78sVbCJ_4yk-pSWzI0xmVOMzQ9_9ddMlCeHgFNM0t_2ev_ckH6C_c0YivI1BqvbDT3-8yDdaJxTwl1IURu9Ill1nURR1Y6vhyBI88jq5edZWxxkYJgNIEt6b4Bn5O1a1RIjpybdDQmqfCTWIBLy9s5EbF7rjLV1mMHaGmFnUrjKUEmogqMiAqGZ0cpPDid_OJ8D-9oNe2TiywRhRhXRmFipvk8Z58_w
 ```
 
-Пропишем пользователя с токеном в локальный конфиг (~/.kube/config, блок users)
+Прописываю пользователя с токеном в локальный конфиг (~/.kube/config, блок users)
 
 ```shell
 dmitriy@dellix:~/netology/devkub-homeworks$ TOKEN_DEVEL_READ=$(kubectl get secrets devel-read-token -o jsonpath={.data.token} | base64 --decode); kubectl config set-credentials devel-read --token $TOKEN_DEVEL_READ
 User "devel-read" set.
 ```
 
-Переключимся на пользователя:
+Переключаюсь на пользователя:
 
 ```shell
 dmitriy@dellix:~/netology/devkub-homeworks$ kubectl config set-context minikube --user devel-read
