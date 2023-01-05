@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: back
+  name: back
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: back
+  template:
+    metadata:
+      labels:
+        app: back
+    spec:
+      containers:
+        - image: dmi3x3/13-kubernetes-config_backend
+          ports:
+            - containerPort: 9000
+              name: backend
+              protocol: TCP
+          env:
+            - name: DATABASE_URL
+              value: postgres://postgres:postgres@postgres.prod.svc.cluster.local:5432/news
+          name: back
+      restartPolicy: Always

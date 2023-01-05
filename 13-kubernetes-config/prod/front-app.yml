@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: front
+  name: front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front
+  template:
+    metadata:
+      labels:
+        app: front
+    spec:
+      containers:
+        - image: dmi3x3/13-kubernetes-config_frontend
+          ports:
+            - containerPort: 80
+              name: fontend
+              protocol: TCP
+          env:
+            - name: BASE_URL
+              value: http://back-svc.prod.svc.cluster.local:9000
+          name: front
+      restartPolicy: Always
