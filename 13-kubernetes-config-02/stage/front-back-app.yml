@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: front-back
+  name: front-back
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front-back
+  template:
+    metadata:
+      labels:
+        app: front-back
+    spec:
+      containers:
+        - image: dmi3x3/13-kubernetes-config_frontend
+          ports:
+            - containerPort: 80
+              name: fontend
+              protocol: TCP
+          volumeMounts:
+            - mountPath: "/static"
+              name: stage-volume
+          env:
+            - name: BASE_URL
+              value: http://localhost:9000
+          name: front
+        - image: dmi3x3/13-kubernetes-config_backend
+          ports:
+            - containerPort: 9000
+              name: backend
+              protocol: TCP
+          volumeMounts:
+            - mountPath: "/static"
+              name: stage-volume
+          env:
+            - name: DATABASE_URL
+              value: postgres://postgres:postgres@postgres.stage.svc.cluster.local:5432/news
+          name: back
+      restartPolicy: Always
+      volumes:
+        - name: stage-volume
+          emptyDir: {}

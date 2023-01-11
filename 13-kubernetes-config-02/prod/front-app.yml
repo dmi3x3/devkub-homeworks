@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: front
+  name: front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front
+  template:
+    metadata:
+      labels:
+        app: front
+    spec:
+      containers:
+        - image: dmi3x3/13-kubernetes-config_frontend
+          ports:
+            - containerPort: 80
+              name: fontend
+              protocol: TCP
+          env:
+            - name: BASE_URL
+              value: http://back-svc.prod.svc.cluster.local:9000
+          name: front
+          volumeMounts:
+            - mountPath: "/static"
+              name: prod-volume
+      restartPolicy: Always
+      volumes:
+        - name: prod-volume
+          persistentVolumeClaim:
+            claimName: pvc-nfs-prod
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: front-svc
+spec:
+  ports:
+    - name: "8000"
+      port: 8000
+      targetPort: 80
+  selector:
+    app: front
+  type: ClusterIP
