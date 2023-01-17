@@ -1,0 +1,48 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  labels:
+    app: db
+  name: 'postgres-{{ .Release.Name | replace "." "-" }}'
+spec:
+  ports:
+    - name: 'postgres'
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: db
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  labels:
+    app: back
+  name: 'back-{{ .Release.Name | replace "." "-" }}'
+spec:
+  ports:
+    - name: 'backend'
+      port: 9000
+      targetPort: 9000
+  selector:
+    app: back
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  labels:
+    app: front
+  name: 'front-{{ .Release.Name | replace "." "-" }}'
+spec:
+  ports:
+    - name: 'frontend'
+      port: 8000
+      targetPort: 80
+  selector:
+    app: front
+  type: ClusterIP

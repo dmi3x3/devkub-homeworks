@@ -1,0 +1,26 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: back
+  name: 'back-{{ .Release.Name | replace "." "-" }}'
+spec:
+  replicas: {{ .Values.back.replicaCount }}
+  selector:
+    matchLabels:
+      app: back
+  template:
+    metadata:
+      labels:
+        app: back
+    spec:
+      containers:
+        - image: '{{ .Values.back.image }}:{{ .Values.back.tag }}'
+          name: back
+          env:
+            - name: DATABASE_URL
+              value: 'postgres://postgres:postgres@postgres-{{ .Release.Name | replace "." "-" }}.{{ .Values.namespace }}.svc.cluster.local:5432/news'
+          ports:
+            - containerPort: 9000
+      restartPolicy: Always

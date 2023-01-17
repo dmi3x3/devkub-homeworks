@@ -1,0 +1,10 @@
+front:
+  image: 'dmi3x3/13-kubernetes-config_frontend'
+  tag: ''
+  replicaCount: 2
+back:
+  image: 'dmi3x3/13-kubernetes-config_backend'
+  tag: ''
+  replicaCount: 2
+
+namespace: 'default'
